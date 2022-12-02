@@ -8,5 +8,5 @@ Maxime :
 - Philosophe
 
 Laurent :
-- Lecteur écrivain
+- Producteur-conso
 
