@@ -17,7 +17,7 @@ void* philosophe ( void* arg )
     int *id=(int *) arg;
     int left = *id;
     int right = (left + 1) % N;
-    for(int i = 0; i<100; i++) {
+    for(int i = 0; i<10000; i++) {
         // philosophe pense
         if (left < right)
         {
