@@ -1,6 +1,4 @@
-#include <error.h>
 #include <pthread.h>
-#include <semaphore.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,62 +7,51 @@
 
 // Initialisation
 #define N 8 // places dans le buffer
-pthread_mutex_t mutex;
-sem_t empty;
-sem_t full;
+#define N_ELEMENTS 8192 //
+semaphore_t empty;
+semaphore_t full;
+int mutex;
+int fullMutex;
+int emptyMutex;
 int *buffer;
-int *presence;
+int filling=0;
 
 // Producteur
 void *producer(void *argv)
 {
+  int nprodFrac = *((int *)argv);
   int item;
-  int changed = 0;
-  for(int j=0;j<8192;j++)
+  for(int j=0;j<nprodFrac;j++)
   {
     for (int i=0; i<10000; i++); // simulation traitement
     item=rand();
-    wait(&empty); // attente d’une place libre
+    wait(&empty);
     test_and_test_and_set(&mutex);
-    // section critique
-    for(int i;i<N;i++)
-    {
-      if(presence[i]==0 && changed==0)
-      {
-        buffer[i] = item;
-        presence[i] = 1;
-        changed = 1;
-      }
-    }
+    /////// SECTION CRITIQUE ///////
+    buffer[filling] = item;
+    filling++;
+    ////////////////////////
     unlock(&mutex);
-    post(&full); // il y a une place remplie en plus
+    post(&full);
   }
-  return (NULL);
 }
 
 // Consommateur
 void *consumer(void *argv)
 {
-  int item;
-  int changed = 0;
-  for(int j=0;j<8192;j++)
+  int nconsFrac = *((int *)argv);
+  for(int j=0;j<nconsFrac;j++)
   {
-    wait(&full); // attente d’une place remplie
+    wait(&full);
     test_and_test_and_set(&mutex);
-    // section critique
-    for(int i;i<N;i++)
-    {
-      if(presence[i]==1 && changed==0)
-      {
-        presence[i] = 0;
-        changed = 1;
-      }
-    }
+    //////// SECTION CRITIQUE ////////
+    buffer[filling-1]=0;
+    filling--;
+    ////////////////////////
     unlock(&mutex);
-    post(&empty); // il y a une place libre en plus
+    post(&empty);
     for (int i=0; i<10000; i++); // simulation traitement
   }
-  return (NULL);
 }
 
 //------------------------------------------------------------------
@@ -81,50 +68,47 @@ int main(int argc, char *argv[])
   pthread_t prod[nProd];
   pthread_t cons[nCons];
   buffer = malloc(sizeof(int) * N);
-  presence = calloc(N,sizeof(int));
 
   // Création du mutex + semaphores
-  if (pthread_mutex_init(&mutex, NULL) != 0) // buffer rempli
+  mutex = 0;
+  empty.nombre = N;
+  empty.mutex = &emptyMutex;
+  full.nombre = 0;
+  full.mutex = &fullMutex;
+
+  // Création des threads
+  int nLoop1Prod = (N_ELEMENTS / nProd) + (N_ELEMENTS % nProd); // 1er threads
+  int nLoop1Cons = (N_ELEMENTS / nCons) + (N_ELEMENTS % nCons);
+  if(pthread_create(&(prod[0]),NULL,producer,(void *)&nLoop1Prod) != 0)
     return EXIT_FAILURE;
-  if(sem_init(&empty, 0 , N) != 0)
+  if(pthread_create(&(cons[0]),NULL,consumer,(void *)&nLoop1Cons) != 0)
     return EXIT_FAILURE;
-  if(sem_init(&full, 0 , 0) != 0) // buffer vide
-    return EXIT_FAILURE;
-
-    // Création des threads
-    for(int i=0;i<nProd;i++)
-    {
-      if(pthread_create(&(prod[i]),NULL,producer,NULL) != 0)
-        return EXIT_FAILURE;
-    }
-    for(int i=0;i<nCons;i++)
-    {
-      if(pthread_create(&(cons[i]),NULL,consumer,NULL) != 0)
-        return EXIT_FAILURE;
-    }
-
-    // Rejoignement des threads
-    for (int i = 0; i < nProd; i++)
-    {
-      if(pthread_join(prod[i], NULL) != 0)
-        return EXIT_FAILURE;
-    }
-    for (int i = 0; i < nCons; i++)
-    {
-      if(pthread_join(cons[i], NULL) != 0)
-        return EXIT_FAILURE;
-    }
-
-    // Destruction du mutex + semaphores
-    if (pthread_mutex_destroy(&(mutex)) != 0)
+  int nLoopsProd = N_ELEMENTS / nProd; // threads suivants
+  int nLoopsCons = N_ELEMENTS / nCons;
+  for(int i=1;i<nProd;i++)
+  {
+    if(pthread_create(&(prod[i]),NULL,producer,(void *)&nLoopsProd) != 0)
       return EXIT_FAILURE;
-    if(sem_destroy(&empty) != 0)
+  }
+  for(int i=1;i<nCons;i++)
+  {
+    if(pthread_create(&(cons[i]),NULL,consumer,(void *)&nLoop1Cons) != 0)
       return EXIT_FAILURE;
-    if(sem_destroy(&full) !=0)
+  }
+
+  // Rejoignement des threads
+  for (int i = 0; i < nProd; i++)
+  {
+    if(pthread_join(prod[i], NULL) != 0)
       return EXIT_FAILURE;
+  }
+  for (int i = 0; i < nCons; i++)
+  {
+    if(pthread_join(cons[i], NULL) != 0)
+      return EXIT_FAILURE;
+  }
 
-    free(buffer);
-    free(presence);
+  free(buffer);
 
-    return(EXIT_SUCCESS);
+  return(EXIT_SUCCESS);
 }
