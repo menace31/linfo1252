@@ -1,102 +1,76 @@
-#include <error.h>
 #include <pthread.h>
-#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <unistd.h>
 #include "verrou.h"
 
-int N;
-pthread_mutex_t *baguette;
+pthread_mutex_t* baguette;
 
-void *philosophe(void *arg)
+int N;
+
+void* mange() {
+    printf("Philosophe mange\n");
+    NULL;
+}
+void* philosophe ( void* arg )
 {
-    int *id = (int *)arg;
+    int *id=(int *) arg;
     int left = *id;
     int right = (left + 1) % N;
-    int err;
-    for (int i = 0; i < 100000; i++)
-    {
+    for(int i = 0; i<10000; i++) {
         // philosophe pense
         if (left < right)
         {
-            err = test_and_test(baguette + left);
-            if (err != 0)
-            {
-                error(EXIT_FAILURE, err, "pthread_mutex_lock");
-            }
-            err = test_and_test(baguette + right);
-            if (err != 0)
-            {
-                error(EXIT_FAILURE, err, "pthread_mutex_lock");
-            }
+            test_and_test_and_set(&baguette[left]);
+            test_and_test_and_set(&baguette[right]);
         }
         else
         {
-            err = test_and_test(baguette + right);
-            if (err != 0)
-            {
-                error(EXIT_FAILURE, err, "pthread_mutex_lock");
-            }
-            err = test_and_test(baguette + left);
-            if (err != 0)
-            {
-                error(EXIT_FAILURE, err, "pthread_mutex_lock");
-            }
+            test_and_test_and_set(&baguette[right]);
+            test_and_test_and_set(&baguette[left]);
         }
-        //mange
-        err = unlock(&baguette[left]);
-        if (err != 0)
-            error(EXIT_FAILURE, err, "pthread_mutex_unlock");
-        err = unlock(&baguette[right]);
-        if (err != 0)
-            error(EXIT_FAILURE, err, "pthread_mutex_unlock");
+        mange();
+        unlock(&baguette[left]);
+        unlock(&baguette[right]);
     }
-    return (NULL);
 }
 
-int main(int argc, char *argv[])
-{
-    if (argc < 2)
-    {
-        fprintf(stderr, "ERROR\tLe nombre d'arguments n'est pas valide\n");
+int main (int argc, char *argv[]){
+    if(argc < 2){
         return EXIT_FAILURE;
     }
     N = atoi(argv[1]);
+    int id[N];
     pthread_t phil[N];
-    int err;
-    int num[N];
-    baguette = malloc(sizeof(pthread_mutex_t) * N);
-    //--- Création des mutex ----------------------------
-    for (int i = 0; i < N; i++)
-    {
-        err = pthread_mutex_init(&(baguette[i]), NULL);
-        if (err != 0)
-            error(EXIT_FAILURE, err, "pthread_mutex_init");
-        num[i] = i;
+    baguette = (pthread_mutex_t*)malloc(sizeof(pthread_mutex_t) * N);
+
+    //Creat mutex
+    for(int i = 0; i < N; ++i){
+        id[i]=i;
+        if(pthread_mutex_init(&baguette[i],NULL) != 0){
+            return EXIT_FAILURE;
+        }
     }
-    //--- Création et lancement des threads -------------
-    for (int i = 0; i < N; i++)
-    {
-        err = pthread_create(&(phil[i]), NULL, &philosophe, (void *)&(num[i]));
-        if (err != 0)
-            error(EXIT_FAILURE, err, "pthread_create");
+    //creat thread
+    for (int i = 0; i < N; ++i) {
+        if(pthread_create(&phil[i], NULL, philosophe, (void *)&(id[i]))!= 0){
+            return EXIT_FAILURE;
+        }
+
     }
-    //--- Rejoignement des threads -----------------------
-    for (int i = 0; i < N; i++)
-    {
-        err = pthread_join(phil[i], NULL);
-        if (err != 0)
-            error(EXIT_FAILURE, err, "pthread_join");
+    //join thread
+    for (int i = 0; i < N; ++i) {
+        if(pthread_join(phil[i], NULL)!= 0){
+            return EXIT_FAILURE;
+        }
     }
-    //--- Destruction des mutex --------------------------
-    for (int i = 0; i < N; i++)
-    {
-        err = pthread_mutex_destroy(&(baguette[i]));
-        if (err != 0)
-            error(EXIT_FAILURE, err, "pthread_mutex_destroy");
+    //destroy mutex
+    for(int i = 0; i< N; ++i){
+        if(pthread_mutex_destroy(&(baguette[i]))!=0){
+            return EXIT_FAILURE;
+        }
     }
 
-    free(baguette);
     return EXIT_SUCCESS;
 }
