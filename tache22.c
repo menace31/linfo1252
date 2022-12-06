@@ -14,7 +14,7 @@ void *fun(void *argv)
 {
   for(int j=0;j<nPassages;j++)
   {
-    test_and_test(&mutex);
+    test_and_test_and_set(&mutex);
     for (int i=0; i<10000; i++);
     unlock(&mutex);
   }
@@ -35,30 +35,26 @@ int main(int argc, char *argv[])
   int err;
 
   // Création du mutex
-  err = pthread_mutex_init(&mutex, NULL);
-  if (err != 0)
-    error(EXIT_FAILURE, err, "pthread_mutex_init");
+  if(pthread_mutex_init(&mutex, NULL) != 0)
+    return EXIT_FAILURE;
 
   // Création des threads
   for(int i=0;i<nProd;i++)
   {
-    err=pthread_create(&(thread[i]),NULL,fun,NULL);
-    if(err!=0)
-      error(EXIT_FAILURE, err,"pthread_create");
+    if(pthread_create(&(thread[i]),NULL,fun,NULL)!=0)
+      return EXIT_FAILURE;
   }
 
   // Rejoignement des threads
   for (int i = 0; i < N; i++)
   {
-    err = pthread_join(thread[i], NULL);
-    if (err != 0)
-      error(EXIT_FAILURE, err, "pthread_join");
+    if(pthread_join(thread[i], NULL) != 0)
+      return EXIT_FAILURE;
   }
 
   // Destruction du mutex
-  err = pthread_mutex_destroy(&(mutex));
-  if (err != 0)
-    error(EXIT_FAILURE, err, "pthread_mutex_destroy");
+  if (pthread_mutex_destroy(&(mutex)) != 0)
+    return EXIT_FAILURE;
   sem_destroy(&empty);
 
   return(EXIT_SUCCESS);

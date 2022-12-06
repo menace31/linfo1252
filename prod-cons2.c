@@ -25,7 +25,7 @@ void *producer(void *argv)
     for (int i=0; i<10000; i++); // simulation traitement
     item=rand();
     wait(&empty); // attente d’une place libre
-    test_and_test(&mutex);
+    test_and_test_and_set(&mutex);
     // section critique
     for(int i;i<N;i++)
     {
@@ -50,7 +50,7 @@ void *consumer(void *argv)
   for(int j=0;j<8192;j++)
   {
     wait(&full); // attente d’une place remplie
-    test_and_test(&mutex);
+    test_and_test_and_set(&mutex);
     // section critique
     for(int i;i<N;i++)
     {
@@ -84,57 +84,47 @@ int main(int argc, char *argv[])
   presence = calloc(N,sizeof(int));
 
   // Création du mutex + semaphores
-  int err;
-  err = pthread_mutex_init(&mutex, NULL);
-  if (err != 0)
-    error(EXIT_FAILURE, err, "pthread_mutex_init");
-  err = sem_init(&empty, 0 , N); // buffer vide
-  if(err!=0)
-    error(EXIT_FAILURE,err,"sem_init");
-  sem_init(&full, 0 , 0); // buffer vide
-  if(err!=0)
-    error(EXIT_FAILURE,err,"sem_init");
+  if (pthread_mutex_init(&mutex, NULL) != 0) // buffer rempli
+    return EXIT_FAILURE;
+  if(sem_init(&empty, 0 , N) != 0)
+    return EXIT_FAILURE;
+  if(sem_init(&full, 0 , 0) != 0) // buffer vide
+    return EXIT_FAILURE;
 
-  // Création des threads
-  for(int i=0;i<nProd;i++)
-  {
-    err=pthread_create(&(prod[i]),NULL,producer,NULL);
-    if(err!=0)
-      error(EXIT_FAILURE, err,"pthread_create");
-  }
-  for(int i=0;i<nCons;i++)
-  {
-    err=pthread_create(&(cons[i]),NULL,consumer,NULL);
-    if(err!=0)
-      error(EXIT_FAILURE, err,"pthread_create");
-  }
+    // Création des threads
+    for(int i=0;i<nProd;i++)
+    {
+      if(pthread_create(&(prod[i]),NULL,producer,NULL) != 0)
+        return EXIT_FAILURE;
+    }
+    for(int i=0;i<nCons;i++)
+    {
+      if(pthread_create(&(cons[i]),NULL,consumer,NULL) != 0)
+        return EXIT_FAILURE;
+    }
 
-  // Rejoignement des threads
-  for (int i = 0; i < nProd; i++)
-  {
-    err = pthread_join(prod[i], NULL);
-    if (err != 0)
-      error(EXIT_FAILURE, err, "pthread_join");
-  }
-  for (int i = 0; i < nCons; i++)
-  {
-    err = pthread_join(cons[i], NULL);
-    if (err != 0)
-      error(EXIT_FAILURE, err, "pthread_join");
-  }
+    // Rejoignement des threads
+    for (int i = 0; i < nProd; i++)
+    {
+      if(pthread_join(prod[i], NULL) != 0)
+        return EXIT_FAILURE;
+    }
+    for (int i = 0; i < nCons; i++)
+    {
+      if(pthread_join(cons[i], NULL) != 0)
+        return EXIT_FAILURE;
+    }
 
-  // Destruction du mutex + semaphores
-  err = pthread_mutex_destroy(&(mutex));
-  if (err != 0)
-    error(EXIT_FAILURE, err, "pthread_mutex_destroy");
-  sem_destroy(&empty);
-  if(err!=0)
-    error(EXIT_FAILURE, err,"sem_destroy");
-  sem_destroy(&full);
-  if(err!=0)
-    error(EXIT_FAILURE, err,"sem_destroy");
+    // Destruction du mutex + semaphores
+    if (pthread_mutex_destroy(&(mutex)) != 0)
+      return EXIT_FAILURE;
+    if(sem_destroy(&empty) != 0)
+      return EXIT_FAILURE;
+    if(sem_destroy(&full) !=0)
+      return EXIT_FAILURE;
 
-  free(buffer);
-  free(presence);
-  return(EXIT_SUCCESS);
+    free(buffer);
+    free(presence);
+
+    return(EXIT_SUCCESS);
 }

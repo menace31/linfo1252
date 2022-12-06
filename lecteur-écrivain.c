@@ -65,49 +65,40 @@ int main(int argc, char *argv[])
   pthread_t lecteur[nL];
 
   // Création du mutex + semaphore
-  int err;
-  err = pthread_mutex_init(&mutex, NULL);
-  if (err != 0)
-    error(EXIT_FAILURE, err, "pthread_mutex_init");
-  err = sem_init(&db, 0, 1); // buffer vide
-  if(err!=0)
-    error(EXIT_FAILURE,err,"sem_init");
+  if(pthread_mutex_init(&mutex, NULL) != 0)
+    return EXIT_FAILURE;
+  if(sem_init(&db, 0, 1) != 0)
+    return EXIT_FAILURE;
 
   // Création des threads
   for(int i=0;i<nE;i++)
   {
-    err=pthread_create(&(ecrivain[i]),NULL,writer,NULL);
-    if(err!=0)
-      error(EXIT_FAILURE, err,"pthread_create");
+    if(pthread_create(&(ecrivain[i]),NULL,writer,NULL) != 0)
+      return EXIT_FAILURE;
   }
   for(int i=0;i<nL;i++)
   {
-    err=pthread_create(&(lecteur[i]),NULL,reader,NULL);
-    if(err!=0)
-      error(EXIT_FAILURE, err,"pthread_create");
+    if(pthread_create(&(lecteur[i]),NULL,reader,NULL) != 0)
+      return EXIT_FAILURE;
   }
 
   // Rejoignement des threads
   for (int i = 0; i < nE; i++)
   {
-    err = pthread_join(ecrivain[i], NULL);
-    if (err != 0)
-      error(EXIT_FAILURE, err, "pthread_join");
+    if (pthread_join(ecrivain[i], NULL) != 0)
+      return EXIT_FAILURE;
   }
   for (int i = 0; i < nL; i++)
   {
-    err = pthread_join(lecteur[i], NULL);
-    if (err != 0)
-      error(EXIT_FAILURE, err, "pthread_join");
+    if (pthread_join(lecteur[i], NULL) != 0)
+      return EXIT_FAILURE;
   }
 
   // Destruction du mutex + semaphores
-  err = pthread_mutex_destroy(&(mutex));
-  if (err != 0)
-    error(EXIT_FAILURE, err, "pthread_mutex_destroy");
-  sem_destroy(&db);
-  if(err!=0)
-    error(EXIT_FAILURE, err,"sem_destroy");
+  if (pthread_mutex_destroy(&(mutex)) != 0)
+    return EXIT_FAILURE;
+  if(sem_destroy(&db) != 0)
+    return EXIT_FAILURE;
 
   return(EXIT_SUCCESS);
 }
