@@ -9,7 +9,6 @@ pthread_mutex_t* baguette;
 int N;
 
 void* mange() {
-    printf("Philosophe mange\n");
     NULL;
 }
 void* philosophe ( void* arg )
