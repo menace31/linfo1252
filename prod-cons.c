@@ -18,15 +18,16 @@ int *presence;
 void *producer(void *argv)
 {
   int item;
-  int changed = 0;
+  int changed;
   for(int j=0;j<8192;j++)
   {
     for (int i=0; i<10000; i++); // simulation traitement
     item=rand();
-    sem_wait(&empty); // attente d’une place libre
+    sem_wait(&empty);
     pthread_mutex_lock(&mutex);
-    // section critique
-    for(int i;i<N;i++)
+    /////// SECTION CRITIQUE ///////
+    changed = 0;
+    for(int i=0;i<N;i++)
     {
       if(presence[i]==0 && changed==0)
       {
@@ -35,23 +36,23 @@ void *producer(void *argv)
         changed = 1;
       }
     }
+    ///////////////////
     pthread_mutex_unlock(&mutex);
-    sem_post(&full); // il y a une place remplie en plus
+    sem_post(&full);
   }
-  return (NULL);
 }
 
 // Consommateur
 void *consumer(void *argv)
 {
-  int item;
-  int changed = 0;
+  int changed;
   for(int j=0;j<8192;j++)
   {
-    sem_wait(&full); // attente d’une place remplie
+    sem_wait(&full);
     pthread_mutex_lock(&mutex);
-    // section critique
-    for(int i;i<N;i++)
+    //////// SECTION CRITIQUE ////////
+    changed = 0;
+    for(int i=N-1;i>=0;i--)
     {
       if(presence[i]==1 && changed==0)
       {
@@ -59,11 +60,11 @@ void *consumer(void *argv)
         changed = 1;
       }
     }
+    ////////////////////////
     pthread_mutex_unlock(&mutex);
-    sem_post(&empty); // il y a une place libre en plus
+    sem_post(&empty);
     for (int i=0; i<10000; i++); // simulation traitement
   }
-  return (NULL);
 }
 
 //------------------------------------------------------------------
@@ -113,14 +114,13 @@ int main(int argc, char *argv[])
     if(pthread_join(cons[i], NULL) != 0)
       return EXIT_FAILURE;
   }
-
   // Destruction du mutex + semaphores
   if (pthread_mutex_destroy(&(mutex)) != 0)
     return EXIT_FAILURE;
   if(sem_destroy(&empty) != 0)
     return EXIT_FAILURE;
   if(sem_destroy(&full) !=0)
-    return EXIT_FAILURE; 
+    return EXIT_FAILURE;
 
   free(buffer);
   free(presence);
