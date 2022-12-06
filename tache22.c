@@ -4,17 +4,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include "test-and-set.h"
+#include "verrou.h"
 
 #define NSECCRIT 6400
-
+pthread_mutex_t mutex;
 int nPassages;
 
 void *fun(void *argv)
 {
   for(int j=0;j<nPassages;j++)
   {
-    lock(&mutex);
+    test_and_test(&mutex);
     for (int i=0; i<10000; i++);
     unlock(&mutex);
   }
@@ -34,7 +34,10 @@ int main(int argc, char *argv[])
   pthread_t thread;
   int err;
 
-  // Création du verrou ?????
+  // Création du mutex
+  err = pthread_mutex_init(&mutex, NULL);
+  if (err != 0)
+    error(EXIT_FAILURE, err, "pthread_mutex_init");
 
   // Création des threads
   for(int i=0;i<nProd;i++)
@@ -52,7 +55,11 @@ int main(int argc, char *argv[])
       error(EXIT_FAILURE, err, "pthread_join");
   }
 
-  // Destruction du verrou ??????
+  // Destruction du mutex
+  err = pthread_mutex_destroy(&(mutex));
+  if (err != 0)
+    error(EXIT_FAILURE, err, "pthread_mutex_destroy");
+  sem_destroy(&empty);
 
   return(EXIT_SUCCESS);
 }
