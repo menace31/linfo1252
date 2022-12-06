@@ -7,8 +7,8 @@
 #include <unistd.h>
 
 // Initialisation
-#define nRead 2560 // nbre lectures
-#define nWrite 640 // nbre lectures
+#define nReadTot 2560 // nbre lectures
+#define nWriteTot 640 // nbre lectures
 pthread_mutex_t mutex;
 sem_t db; // accès à la db
 int readcount=0; // nombre de readers
@@ -16,10 +16,11 @@ int readcount=0; // nombre de readers
 // Ecrivain
 void *writer(void *argv)
 {
-  while(true)
+  int nWriteFrac = *((int *)argv);
+  for(int j=0;j<nWriteFrac;j++)
   {
     sem_wait(&db);
-    // section critique, un seul writer à la fois
+    // section critique,
     for (int i=0; i<10000; i++);
     sem_post(&db);
   }
@@ -28,7 +29,8 @@ void *writer(void *argv)
 // Lecteur
 void *reader(void *argv)
 {
-  while(true)
+  int nReadFrac = *((int *)argv);
+  for(int j=0;j<nReadFrac;j++)
   {
     pthread_mutex_lock(&mutex);
     // section critique
@@ -59,10 +61,10 @@ int main(int argc, char *argv[])
         fprintf(stderr, "ERROR\tLe nombre d'arguments n'est pas valide\n");
         return EXIT_FAILURE;
     }
-  int nE = atoi(argv[1]);
-  int nL = atoi(argv[2]);
-  pthread_t ecrivain[nE];
-  pthread_t lecteur[nL];
+  int nThreadE = atoi(argv[1]);
+  int nThreadL = atoi(argv[2]);
+  pthread_t ecrivain[nThreadE];
+  pthread_t lecteur[nThreadL];
 
   // Création du mutex + semaphore
   if(pthread_mutex_init(&mutex, NULL) != 0)
@@ -71,24 +73,33 @@ int main(int argc, char *argv[])
     return EXIT_FAILURE;
 
   // Création des threads
-  for(int i=0;i<nE;i++)
+  int nLoop1E = (nWriteTot / nThreadE) + (nWriteTot % nThreadE); // 1er thread
+  int nLoop1L = (nReadTot / nThreadL) + (nReadTot % nThreadL);
+  if(pthread_create(&(ecrivain[0]),NULL,writer,(void *)&nLoop1E) != 0)
+    return EXIT_FAILURE;
+  if(pthread_create(&(lecteur[0]),NULL,reader,(void *)&nLoop1L) != 0)
+    return EXIT_FAILURE;
+
+  int nLoopsE = nWriteTot / nThreadE; // threads suivants
+  int nLoopsL = nReadTot / nThreadL;
+  for(int i=1;i<nThreadE;i++)
   {
-    if(pthread_create(&(ecrivain[i]),NULL,writer,NULL) != 0)
+    if(pthread_create(&(ecrivain[i]),NULL,writer,(void *)&nLoopsE) != 0)
       return EXIT_FAILURE;
   }
-  for(int i=0;i<nL;i++)
+  for(int i=1;i<nThreadL;i++)
   {
-    if(pthread_create(&(lecteur[i]),NULL,reader,NULL) != 0)
+    if(pthread_create(&(lecteur[i]),NULL,reader,(void *)&nLoopsL) != 0)
       return EXIT_FAILURE;
   }
 
   // Rejoignement des threads
-  for (int i = 0; i < nE; i++)
+  for (int i = 0; i < nThreadE; i++)
   {
     if (pthread_join(ecrivain[i], NULL) != 0)
       return EXIT_FAILURE;
   }
-  for (int i = 0; i < nL; i++)
+  for (int i = 0; i < nThreadL; i++)
   {
     if (pthread_join(lecteur[i], NULL) != 0)
       return EXIT_FAILURE;
