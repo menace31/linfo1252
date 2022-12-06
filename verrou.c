@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <verrou.h>
+#include "verrou.h"
 
 int test_and_set(int *lock){
     int i = 1;
