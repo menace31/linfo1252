@@ -8,7 +8,7 @@ echo "nthreads,time1,time2,time3,time4,time5" >> mesures/prod-cons1.csv
 echo "nthreads,time1,time2,time3,time4,time5"
 
 NT=$(nproc)
-for((i=1; i<=NT; i*=2))
+for((i=1; i<=32; i*=2))
 do
  Itot=$((2*i))
  echo -n "1,$Itot" >> mesures/prod-cons1.csv

@@ -8,7 +8,7 @@ echo "nthreads,time1,time2,time3,time4,time5" >> mesures/tache22.csv
 echo "nthreads,time1,time2,time3,time4,time5"
 
 NT=$(nproc)
-for((i=1; i<=2*NT; i*=2))
+for((i=1; i<=64; i*=2))
 do
  echo -n "1,$i" >> mesures/tache22.csv
  echo -n "1,$i"
