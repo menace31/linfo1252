@@ -8,34 +8,27 @@
 
 // Initialisation
 #define N 8 // places dans le buffer
+#define N_ELEMENTS 8192 //
 pthread_mutex_t mutex;
 sem_t empty;
 sem_t full;
 int *buffer;
-int *presence;
+int filling=0;
 
 // Producteur
 void *producer(void *argv)
 {
+  int nprodFrac = *((int *)argv);
   int item;
-  int changed;
-  for(int j=0;j<8192;j++)
+  for(int j=0;j<nprodFrac;j++)
   {
     for (int i=0; i<10000; i++); // simulation traitement
     item=rand();
     sem_wait(&empty);
     pthread_mutex_lock(&mutex);
     /////// SECTION CRITIQUE ///////
-    changed = 0;
-    for(int i=0;i<N;i++)
-    {
-      if(presence[i]==0 && changed==0)
-      {
-        buffer[i] = item;
-        presence[i] = 1;
-        changed = 1;
-      }
-    }
+    buffer[filling] = item;
+    filling++;
     ///////////////////
     pthread_mutex_unlock(&mutex);
     sem_post(&full);
@@ -45,21 +38,14 @@ void *producer(void *argv)
 // Consommateur
 void *consumer(void *argv)
 {
-  int changed;
-  for(int j=0;j<8192;j++)
+  int nconsFrac = *((int *)argv);
+  for(int j=0;j<nconsFrac;j++)
   {
     sem_wait(&full);
     pthread_mutex_lock(&mutex);
     //////// SECTION CRITIQUE ////////
-    changed = 0;
-    for(int i=N-1;i>=0;i--)
-    {
-      if(presence[i]==1 && changed==0)
-      {
-        presence[i] = 0;
-        changed = 1;
-      }
-    }
+    buffer[filling-1]=0;
+    filling--;
     ////////////////////////
     pthread_mutex_unlock(&mutex);
     sem_post(&empty);
@@ -81,7 +67,6 @@ int main(int argc, char *argv[])
   pthread_t prod[nProd];
   pthread_t cons[nCons];
   buffer = malloc(sizeof(int) * N);
-  presence = calloc(N,sizeof(int));
 
   // Création du mutex + semaphores
   if (pthread_mutex_init(&mutex, NULL) != 0) // buffer rempli
@@ -92,14 +77,22 @@ int main(int argc, char *argv[])
     return EXIT_FAILURE;
 
   // Création des threads
-  for(int i=0;i<nProd;i++)
+  int nLoop1Prod = (N_ELEMENTS / nProd) + (N_ELEMENTS % nProd); // 1er threads
+  int nLoop1Cons = (N_ELEMENTS / nCons) + (N_ELEMENTS % nCons);
+  if(pthread_create(&(prod[0]),NULL,producer,(void *)&nLoop1Prod) != 0)
+    return EXIT_FAILURE;
+  if(pthread_create(&(cons[0]),NULL,consumer,(void *)&nLoop1Cons) != 0)
+    return EXIT_FAILURE;
+  int nLoopsProd = N_ELEMENTS / nProd; // threads suivants
+  int nLoopsCons = N_ELEMENTS / nCons;
+  for(int i=1;i<nProd;i++)
   {
-    if(pthread_create(&(prod[i]),NULL,producer,NULL) != 0)
+    if(pthread_create(&(prod[i]),NULL,producer,(void *)&nLoopsProd) != 0)
       return EXIT_FAILURE;
   }
-  for(int i=0;i<nCons;i++)
+  for(int i=1;i<nCons;i++)
   {
-    if(pthread_create(&(cons[i]),NULL,consumer,NULL) != 0)
+    if(pthread_create(&(cons[i]),NULL,consumer,(void *)&nLoop1Cons) != 0)
       return EXIT_FAILURE;
   }
 
@@ -123,7 +116,6 @@ int main(int argc, char *argv[])
     return EXIT_FAILURE;
 
   free(buffer);
-  free(presence);
 
   return(EXIT_SUCCESS);
 }
