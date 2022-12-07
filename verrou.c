@@ -27,17 +27,17 @@ void unlock(int *lock){
         : "%eax");
 }
 
-void wait(semaphore_t mut){
-    while (True)
+void wait(semaphore_t *mut){
+    while (1)
     {
-        test_and_test_and_set(sem->mutex);
-        if (sem->count <= 0)
+        test_and_test_and_set(mut->mutex);
+        if (mut->nombre <= 0)
         {
-            unlock(sem->mutex);
+            unlock(mut->mutex);
         }
         else{
-            sem->count-=1;
-            unlock(sem->mutex);
+            mut->nombre-=1;
+            unlock(mut->mutex);
             break;
         }
     }
@@ -46,6 +46,6 @@ void wait(semaphore_t mut){
 void post(semaphore_t *sem)
 {
     test_and_test_and_set(sem->mutex);
-    sem->count+=1;
+    sem->nombre+=1;
     unlock(sem->mutex);
 }

@@ -1,4 +1,4 @@
-all: philosophes prod-cons lecteur-écrivain philosophes2 prod-cons2 lecteur-écrivain2 tache22
+all:philosophes philosophes2 prod-cons tache22
 
 philosophes: philosophe.c
 	echo "philosophe exécuté"

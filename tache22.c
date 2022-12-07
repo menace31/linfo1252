@@ -7,18 +7,17 @@
 #include "verrou.h"
 
 #define NSECCRIT 6400
-pthread_mutex_t mutex;
-int nPassages;
+int mutex;
 
-void *fun(void *argv)
+void *fun(void *arg)
 {
+  int nPassages = *((int *)arg);
   for(int j=0;j<nPassages;j++)
   {
     test_and_test_and_set(&mutex);
     for (int i=0; i<10000; i++);
     unlock(&mutex);
   }
-  return (NULL);
 }
 
 //------------------------------------------------------------------
@@ -31,18 +30,21 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
   int N = atoi(argv[1]);
-  pthread_t thread;
-  int err;
-
-  // Création du mutex
-  if(pthread_mutex_init(&mutex, NULL) != 0)
-    return EXIT_FAILURE;
+  int first = NSECCRIT / N;               // nombre d'opérations par thread
+  int last = first + NSECCRIT;
+  pthread_t thread[N];
 
   // Création des threads
-  for(int i=0;i<nProd;i++)
+  for(int i=0;i<N;i++)
   {
-    if(pthread_create(&(thread[i]),NULL,fun,NULL)!=0)
+    if (i != N - 1){
+      if(pthread_create(&(thread[i]),NULL,&fun,(void *)&first)!=0)
       return EXIT_FAILURE;
+    }
+    else{
+      if(pthread_create(&(thread[i]),NULL,&fun,(void *)&last)!=0)
+      return EXIT_FAILURE;
+    }
   }
 
   // Rejoignement des threads
@@ -51,11 +53,6 @@ int main(int argc, char *argv[])
     if(pthread_join(thread[i], NULL) != 0)
       return EXIT_FAILURE;
   }
-
-  // Destruction du mutex
-  if (pthread_mutex_destroy(&(mutex)) != 0)
-    return EXIT_FAILURE;
-  sem_destroy(&empty);
 
   return(EXIT_SUCCESS);
 }

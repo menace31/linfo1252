@@ -5,12 +5,10 @@
 #include <unistd.h>
 #include "verrou.h"
 
-pthread_mutex_t* baguette;
-
 int N;
+int* baguette;
 
 void* mange() {
-    printf("Philosophe mange\n");
     NULL;
 }
 void* philosophe ( void* arg )
@@ -22,17 +20,17 @@ void* philosophe ( void* arg )
         // philosophe pense
         if (left < right)
         {
-            test_and_test_and_set(&baguette[left]);
-            test_and_test_and_set(&baguette[right]);
+            test_and_test_and_set(left +baguette);
+            test_and_test_and_set(right +baguette);
         }
         else
         {
-            test_and_test_and_set(&baguette[right]);
-            test_and_test_and_set(&baguette[left]);
+            test_and_test_and_set(right +baguette);
+            test_and_test_and_set(left +baguette);
         }
         mange();
-        unlock(&baguette[left]);
-        unlock(&baguette[right]);
+        unlock(left +baguette);
+        unlock(right +baguette);
     }
 }
 
@@ -43,18 +41,15 @@ int main (int argc, char *argv[]){
     N = atoi(argv[1]);
     int id[N];
     pthread_t phil[N];
-    baguette = (pthread_mutex_t*)malloc(sizeof(pthread_mutex_t) * N);
+    baguette = malloc(sizeof(int) * N);
 
     //Creat mutex
     for(int i = 0; i < N; ++i){
         id[i]=i;
-        if(pthread_mutex_init(&baguette[i],NULL) != 0){
-            return EXIT_FAILURE;
-        }
     }
     //creat thread
     for (int i = 0; i < N; ++i) {
-        if(pthread_create(&phil[i], NULL, philosophe, (void *)&(id[i]))!= 0){
+        if(pthread_create(&phil[i], NULL, &philosophe, (void *)&(id[i]))!= 0){
             return EXIT_FAILURE;
         }
 
@@ -62,12 +57,6 @@ int main (int argc, char *argv[]){
     //join thread
     for (int i = 0; i < N; ++i) {
         if(pthread_join(phil[i], NULL)!= 0){
-            return EXIT_FAILURE;
-        }
-    }
-    //destroy mutex
-    for(int i = 0; i< N; ++i){
-        if(pthread_mutex_destroy(&(baguette[i]))!=0){
             return EXIT_FAILURE;
         }
     }
