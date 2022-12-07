@@ -2,11 +2,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-threads = np.array([2,4,8,16,32,64])
+threads = np.array([1,2,4,8,16,32,64])
 nThreads = len(threads)
-nVersions = 3
+nVersions = 2
 
-data = np.genfromtxt("intel_philo.csv", dtype=None, delimiter=',', skip_header=1)
+data = np.genfromtxt("inginious_tache223.csv", dtype=None, delimiter=',', skip_header=1)
 
 means = np.zeros((nThreads,nVersions))
 sigma = np.zeros((nThreads,nVersions))
@@ -26,8 +26,8 @@ for i in range(nVersions):
 plt.xlim(left=0)
 plt.ylim(bottom=0)
 plt.grid()
-plt.title("Problème des philosophes",fontweight="bold")
+plt.title("Comparaison Test&Set et Test&Test&Set",fontweight="bold")
 plt.xlabel("Nombre total de threads")
 plt.ylabel("Temps moyen[s]")
-plt.legend(["POSIX","Test&Set","Test&Test&Set"],loc=2)
+plt.legend(["Test&Set","Test&Test&Set"],loc=2)
 plt.show()

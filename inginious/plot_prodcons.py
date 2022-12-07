@@ -6,7 +6,7 @@ threads = np.array([2,4,8,16,32,64])
 nThreads = len(threads)
 nVersions = 3
 
-data = np.genfromtxt("intel_philo.csv", dtype=None, delimiter=',', skip_header=1)
+data = np.genfromtxt("inginious_prod-cons.csv", dtype=None, delimiter=',', skip_header=1)
 
 means = np.zeros((nThreads,nVersions))
 sigma = np.zeros((nThreads,nVersions))
@@ -26,7 +26,7 @@ for i in range(nVersions):
 plt.xlim(left=0)
 plt.ylim(bottom=0)
 plt.grid()
-plt.title("Problème des philosophes",fontweight="bold")
+plt.title("Problème des producteur-consommateur",fontweight="bold")
 plt.xlabel("Nombre total de threads")
 plt.ylabel("Temps moyen[s]")
 plt.legend(["POSIX","Test&Set","Test&Test&Set"],loc=2)

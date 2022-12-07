@@ -1,2 +1,3 @@
 #!/usr/bin/bash
-./tests/script_lecteur-ecrivain2.sh
+./tests/script_philosophes1.sh
+./tests/script_philosophes2.sh
