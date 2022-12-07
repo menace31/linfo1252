@@ -26,7 +26,7 @@ void *producer(void *argv)
     for (int i=0; i<10000; i++); // simulation traitement
     item=rand();
     wait(&empty);
-    test_and_set(&mutex);
+    test_and_test_and_set(&mutex);
     /////// SECTION CRITIQUE ///////
     buffer[filling] = item;
     filling++;
@@ -43,7 +43,7 @@ void *consumer(void *argv)
   for(int j=0;j<nconsFrac;j++)
   {
     wait(&full);
-    test_and_set(&mutex);
+    test_and_test_and_set(&mutex);
     //////// SECTION CRITIQUE ////////
     buffer[filling-1]=0;
     filling--;

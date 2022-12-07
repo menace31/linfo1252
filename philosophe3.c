@@ -20,13 +20,13 @@ void* philosophe ( void* arg )
         // philosophe pense
         if (left < right)
         {
-            test_and_set(left +baguette);
-            test_and_set(right +baguette);
+            test_and_test_and_set(left +baguette);
+            test_and_test_and_set(right +baguette);
         }
         else
         {
-            test_and_set(right +baguette);
-            test_and_set(left +baguette);
+            test_and_test_and_set(right +baguette);
+            test_and_test_and_set(left +baguette);
         }
         mange();
         unlock(left +baguette);

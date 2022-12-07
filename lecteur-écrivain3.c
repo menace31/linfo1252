@@ -35,7 +35,7 @@ void *reader(void *argv)
   int nReadFrac = *((int *)argv);
   for(int j=0;j<nReadFrac;j++)
   {
-    test_and_set(&mutex);
+    test_and_test_and_set(&mutex);
     // section critique
     readcount++;
     if (readcount==1)
@@ -46,7 +46,7 @@ void *reader(void *argv)
     ////// SECTION CRITIQUE ////////
     for (int i=0; i<10000; i++);
     ///////////////////////////////
-    test_and_set(&mutex);
+    test_and_test_and_set(&mutex);
     // section critique
     readcount--;
     if(readcount==0)

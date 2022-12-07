@@ -16,7 +16,7 @@ void* philosophe ( void* arg )
     int *id=(int *) arg;
     int left = *id;
     int right = (left + 1) % N;
-    for(int i = 0; i<10000; i++) {
+    for(int i = 0; i<1000000; i++) {
         // philosophe pense
         if (left < right)
         {
@@ -42,7 +42,7 @@ int main (int argc, char *argv[]){
     int id[N];
     pthread_t phil[N];
     baguette = (pthread_mutex_t*)malloc(sizeof(pthread_mutex_t) * N);
-    
+
     //Creat mutex
     for(int i = 0; i < N; ++i){
         id[i]=i;
@@ -55,7 +55,7 @@ int main (int argc, char *argv[]){
         if(pthread_create(&phil[i], NULL, philosophe, (void *)&(id[i]))!= 0){
             return EXIT_FAILURE;
         }
-        
+
     }
     //join thread
     for (int i = 0; i < N; ++i) {
