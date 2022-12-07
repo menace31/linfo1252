@@ -11,8 +11,8 @@ NT=$(nproc)
 for((i=1; i<=NT; i*=2))
 do
  Itot=$((2*i))
- echo -n "$Itot"
- echo -n "$Itot" >> mesures/prod-cons2.csv
+ echo -n "2,$Itot"
+ echo -n "2,$Itot" >> mesures/prod-cons2.csv
  for j in {1..5}
  do
   t=$(/usr/bin/time -f %e ./prod-cons2.o $i $i 2>&1 | tail -n 1)

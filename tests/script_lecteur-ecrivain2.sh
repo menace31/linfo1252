@@ -11,8 +11,8 @@ NT=$(nproc)
 for((i=1; i<=NT; i*=2))
 do
  Itot=$((2*i))
- echo -n "$Itot" >> mesures/lect-ecriv2.csv
- echo -n "$Itot"
+ echo -n "2,$Itot" >> mesures/lect-ecriv2.csv
+ echo -n "2,$Itot"
  for j in {1..5}
  do
   t=$(/usr/bin/time -f %e ./lecteur-écrivain2.o $i $i 2>&1 | tail -n 1)
