@@ -45,8 +45,11 @@ lecteur-écrivain3: lecteur-écrivain3.c verrou.h
 		gcc -pthread lecteur-écrivain3.c verrou.c -o lecteur-écrivain3.o
 
 test:
-	./script.sh
-	python3 mesure.py
+	./experiments.sh
+	python3 mesures/plot_philo.py
+	python3 mesures/plot_prodcons.py
+	python3 mesures/plot_lecteur.py
+	python3 mesures/plot_tache223.py
 
 clean:
 	rm -f *.o

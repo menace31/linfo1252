@@ -1,3 +1,12 @@
 #!/usr/bin/bash
 ./tests/script_philosophes1.sh
 ./tests/script_philosophes2.sh
+./tests/script_philosophes3.sh
+./tests/script_prod-cons1.sh
+./tests/script_prod-cons2.sh
+./tests/script_prod-cons3.sh
+./tests/script_lecteur-ecrivain1.sh
+./tests/script_lecteur-ecrivain2.sh
+./tests/script_lecteur-ecrivain3.sh
+./tests/script_test-and-set.sh
+./tests/script_test-and-test-and-set.sh
